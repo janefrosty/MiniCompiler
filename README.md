@@ -7,8 +7,9 @@
 ```powershell
 pip install -e .
 minicompiler lex examples\hello.mc --output tokens.txt
-Структура проекта
 ```
+
+## Структура проекта
 
 src/lexer/ — токены и сканер
 tests/ — тесты
