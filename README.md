@@ -15,3 +15,18 @@ minicompiler lex examples\hello.mc --output tokens.txt
 src/lexer/ — токены и сканер
 tests/ — тесты
 docs/language_spec.md — спецификация
+
+
+**Спринт 2:** Создать парсер (рекурсивного спуска), построить чёткое AST.
+
+```powershell
+minicompiler parse examples\hello.mc --output ast.txt
+
+Get-Content ast.txt
+```
+
+## Тесты
+
+```powershell
+pytest tests\ -v
+```

@@ -1,0 +1,3 @@
+Program
+  Function main([])
+    VarDecl x = LiteralExpr(value=42)\n    Return IdentifierExpr(name='x')
