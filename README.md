@@ -12,7 +12,9 @@ minicompiler lex examples\hello.mc --output tokens.txt
 ## Структура проекта
 
 src/lexer/ — токены и сканер
+
 tests/ — тесты
+
 docs/language_spec.md — спецификация
 
 
