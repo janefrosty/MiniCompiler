@@ -24,6 +24,18 @@ pip install -e .
 minicompiler lex examples\hello.mc --output tokens.txt
 ```
 
+<<<<<<< HEAD
+=======
+## Структура проекта
+
+src/lexer/ — токены и сканер
+
+tests/ — тесты
+
+docs/language_spec.md — спецификация
+
+
+>>>>>>> ab22e5846d93eeaf7f9faa033d6c87fe7743a5d4
 **Спринт 2:** Создать парсер (рекурсивного спуска), построить чёткое AST.
 
 ```powershell
