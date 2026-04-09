@@ -23,7 +23,7 @@ class Parser:
             params = self._param_list()
         self._consume(TokenType.RPAREN)
         self._consume(TokenType.LBRACE)
-        body = self._block()          # <-- вот этот метод был пропущен
+        body = self._block()
         self._consume(TokenType.RBRACE)
         return FunctionDecl(name, params, body)
 
@@ -108,13 +108,16 @@ class Parser:
             return LiteralExpr(self._previous().literal)
         if self._match(TokenType.IDENTIFIER):
             return IdentifierExpr(self._previous().lexeme)
+        if self._match(TokenType.KW_TRUE):
+            return LiteralExpr(True)
+        if self._match(TokenType.KW_FALSE):
+            return LiteralExpr(False)
         if self._match(TokenType.LPAREN):
             expr = self._expression()
             self._consume(TokenType.RPAREN)
             return expr
         raise Exception(f'Unexpected token: {self._peek().type.name}')
 
-    # Вспомогательные методы
     def _consume(self, typ):
         if self._check(typ):
             return self._advance()
