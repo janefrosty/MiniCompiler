@@ -3,10 +3,9 @@ from typing import List, Any
 
 class Lexer:
     def __init__(self, source: str):
-        # LEX-4: Удаляем BOM (UTF-8 с BOM)
         if source.startswith('\ufeff'):
             source = source[1:]
-            print('ℹ️  BOM удалён из источника')
+            print(' BOM удалён из источника')
         self.source = source
         self.tokens: List[Token] = []
         self.start = 0
@@ -40,7 +39,6 @@ class Lexer:
                 self._handle_newline(c)
             return
         
-        # Комментарии
         if c == '/' and self._match('/'):
             while self._peek() not in '\r\n' and not self._is_at_end():
                 self._advance()
@@ -49,7 +47,6 @@ class Lexer:
             self._multi_line_comment()
             return
         
-        # Многосимвольные операторы
         if c == '=':
             if self._match('='): self._add_token(TokenType.EQ)
             else: self._add_token(TokenType.ASSIGN)
@@ -73,22 +70,18 @@ class Lexer:
             self._add_token(TokenType.OR)
             return
         
-        # Числа
         if c.isdigit() or (c == '-' and self._peek().isdigit()):
             self._number()
             return
         
-        # Строки
         if c == '"':
             self._string()
             return
         
-        # Идентификаторы и ключевые слова
         if c.isalpha() or c == '_':
             self._identifier()
             return
         
-        # Односимвольные
         single_char = {
             '(': TokenType.LPAREN, ')': TokenType.RPAREN,
             '{': TokenType.LBRACE, '}': TokenType.RBRACE,
@@ -102,10 +95,8 @@ class Lexer:
             self._add_token(single_char[c])
             return
         
-        # Ошибка (LEX-5)
         self._error(f"Неожиданный символ: '{c}'")
     
-    # Вспомогательные методы (LEX-6: O(n))
     def _advance(self) -> str:
         c = self.source[self.current]
         self.current += 1

@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 class TokenType(Enum):
-    # Keywords
     KW_IF = auto()
     KW_ELSE = auto()
     KW_WHILE = auto()
@@ -18,16 +17,13 @@ class TokenType(Enum):
     KW_FN = auto()
     KW_RETURN = auto()
     
-    # Literals
     INT_LITERAL = auto()
     FLOAT_LITERAL = auto()
     STRING_LITERAL = auto()
     BOOL_LITERAL = auto()
     
-    # Identifiers
     IDENTIFIER = auto()
     
-    # Operators
     PLUS = auto()
     MINUS = auto()
     STAR = auto()
@@ -44,7 +40,6 @@ class TokenType(Enum):
     NOT = auto()
     ASSIGN = auto()
     
-    # Delimiters
     LPAREN = auto()
     RPAREN = auto()
     LBRACE = auto()

@@ -24,18 +24,6 @@ pip install -e .
 minicompiler lex examples\hello.mc --output tokens.txt
 ```
 
-<<<<<<< HEAD
-=======
-## Структура проекта
-
-src/lexer/ — токены и сканер
-
-tests/ — тесты
-
-docs/language_spec.md — спецификация
-
-
->>>>>>> ab22e5846d93eeaf7f9faa033d6c87fe7743a5d4
 **Спринт 2:** Создать парсер (рекурсивного спуска), построить чёткое AST.
 
 ```powershell
@@ -47,7 +35,15 @@ Get-Content ast.txt
 **Спринт 3:** Семантический анализ и таблица символов.
 
 ```powershell
-PowerShellminicompiler semantic examples\hello.mc
+minicompiler semantic examples\hello.mc
+```
+
+**Спринт 4:** Промежуточное представление (IR) и генерация кода.
+
+```powershell
+pip install -e .
+minicompiler semantic examples\hello.mc
+minicompiler ir      examples\hello.mc --output ir.txt
 ```
 
 ## Тесты

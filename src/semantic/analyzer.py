@@ -37,15 +37,13 @@ class SemanticAnalyzer:
     def visit_function_decl(self, node: FunctionDecl):
         self.current_function_name = node.name
         
-        # Специальное правило для main — возвращает int
         if node.name == 'main':
             return_type = INT_TYPE
         else:
-            return_type = VOID_TYPE   # пока все остальные функции void
+            return_type = VOID_TYPE   
         
         func_type = FunctionType(return_type, [INT_TYPE] * len(node.params))
         
-        # Проверка дубликата
         if self.symbol_table.lookup_local(node.name):
             self._error(f'Функция \"{node.name}\" уже объявлена', node)
         
@@ -55,14 +53,12 @@ class SemanticAnalyzer:
         self.symbol_table.enter_scope()
         self.current_function_return_type = return_type
         
-        # Параметры
         for param_name in node.params:
             if self.symbol_table.lookup_local(param_name):
                 self._error(f'Параметр \"{param_name}\" уже объявлен', node)
             symbol = Symbol(param_name, INT_TYPE, 'param', 0, 0)
             self.symbol_table.insert(param_name, symbol)
         
-        # Тело
         for stmt in node.body:
             self.visit_statement(stmt)
         
