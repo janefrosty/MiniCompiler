@@ -1,13 +1,18 @@
-﻿from mast.node import Program, FunctionDecl, VarDecl, ReturnStmt, BinaryExpr, LiteralExpr, IdentifierExpr
-from .ir import IRProgram, IRFunction, Assign, Binary, Return, Label
+﻿from mast.node import Program, FunctionDecl, VarDecl, ReturnStmt, IfStmt, WhileStmt, BinaryExpr, LiteralExpr, IdentifierExpr
+from .ir import IRProgram, IRFunction, Assign, Binary, Return, Label, Jump, JumpIfZero
 
 class IRGenerator:
     def __init__(self):
         self.temp_counter = 0
+        self.label_counter = 0
 
     def new_temp(self) -> str:
         self.temp_counter += 1
         return f't{self.temp_counter}'
+
+    def new_label(self) -> str:
+        self.label_counter += 1
+        return f'L{self.label_counter}'
 
     def generate(self, program: Program) -> IRProgram:
         functions = []
@@ -23,46 +28,78 @@ class IRGenerator:
 
     def _generate_statement(self, node, body: list):
         if isinstance(node, VarDecl):
-            if isinstance(node.value, LiteralExpr):
-                body.append(Assign(node.name, node.value.value))
-            elif isinstance(node.value, BinaryExpr):
-                temp = self.new_temp()
-                self._generate_binary(node.value, temp, body)
-                body.append(Assign(node.name, temp))
-            else:
-                body.append(Assign(node.name, node.value)) 
+            self._generate_var_decl(node, body)
         elif isinstance(node, ReturnStmt):
-            if isinstance(node.value, LiteralExpr):
-                body.append(Return(node.value.value))
-            elif isinstance(node.value, IdentifierExpr):
-                body.append(Return(node.value.name))
-            else:
-                temp = self.new_temp()
-                self._generate_expression(node.value, temp, body)
-                body.append(Return(temp))
+            self._generate_return(node, body)
+        elif isinstance(node, IfStmt):
+            self._generate_if(node, body)
+        elif isinstance(node, WhileStmt):
+            self._generate_while(node, body)
 
-    def _generate_binary(self, node: BinaryExpr, dest: str, body: list):
-        left = node.left
-        right = node.right
-
-        if isinstance(left, LiteralExpr):
-            left_val = left.value
-        elif isinstance(left, IdentifierExpr):
-            left_val = left.name
+    def _generate_var_decl(self, node, body):
+        if isinstance(node.value, LiteralExpr):
+            body.append(Assign(node.name, node.value.value))
         else:
-            left_val = self.new_temp()
-            self._generate_expression(left, left_val, body)
+            temp = self.new_temp()
+            self._generate_expression(node.value, temp, body)
+            body.append(Assign(node.name, temp))
 
-        if isinstance(right, LiteralExpr):
-            right_val = right.value
-        elif isinstance(right, IdentifierExpr):
-            right_val = right.name
+    def _generate_return(self, node, body):
+        if isinstance(node.value, LiteralExpr):
+            body.append(Return(node.value.value))
         else:
-            right_val = self.new_temp()
-            self._generate_expression(right, right_val, body)
+            temp = self.new_temp()
+            self._generate_expression(node.value, temp, body)
+            body.append(Return(temp))
 
-        body.append(Binary(dest, left_val, node.operator, right_val))
+    def _generate_if(self, node: IfStmt, body):
+        else_label = self.new_label()
+        end_label = self.new_label()
 
-    def _generate_expression(self, node, dest: str, body: list):
-        if isinstance(node, BinaryExpr):
-            self._generate_binary(node, dest, body)
+        # Вычисляем условие
+        cond = self.new_temp()
+        self._generate_expression(node.condition, cond, body)
+        
+        body.append(JumpIfZero(cond, else_label))
+        
+        # Then branch
+        for stmt in node.then_body:
+            self._generate_statement(stmt, body)
+        
+        body.append(Jump(end_label))
+        body.append(Label(else_label))
+        
+        # Else branch
+        if node.else_body:
+            for stmt in node.else_body:
+                self._generate_statement(stmt, body)
+        
+        body.append(Label(end_label))
+
+    def _generate_while(self, node: WhileStmt, body):
+        start_label = self.new_label()
+        end_label = self.new_label()
+
+        body.append(Label(start_label))
+        
+        cond = self.new_temp()
+        self._generate_expression(node.condition, cond, body)
+        body.append(JumpIfZero(cond, end_label))
+        
+        for stmt in node.body:
+            self._generate_statement(stmt, body)
+        
+        body.append(Jump(start_label))
+        body.append(Label(end_label))
+
+    def _generate_expression(self, node, dest: str, body):
+        if isinstance(node, LiteralExpr):
+            body.append(Assign(dest, node.value))
+        elif isinstance(node, IdentifierExpr):
+            body.append(Assign(dest, node.name))
+        elif isinstance(node, BinaryExpr):
+            left = self.new_temp()
+            right = self.new_temp()
+            self._generate_expression(node.left, left, body)
+            self._generate_expression(node.right, right, body)
+            body.append(Binary(dest, left, node.operator, right))

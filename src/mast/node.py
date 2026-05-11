@@ -24,6 +24,18 @@ class VarDecl(Node):
 class ReturnStmt(Node):
     value: 'Expression'
 
+# Новое в Sprint 6
+@dataclass
+class IfStmt(Node):
+    condition: 'Expression'
+    then_body: List['Statement']
+    else_body: Optional[List['Statement']] = None
+
+@dataclass
+class WhileStmt(Node):
+    condition: 'Expression'
+    body: List['Statement']
+
 @dataclass
 class Expression(Node):
     pass
@@ -42,12 +54,15 @@ class LiteralExpr(Expression):
 class IdentifierExpr(Expression):
     name: str
 
-# Для красивого вывода
 def print_ast(node: Node, indent: str = '') -> str:
     if isinstance(node, Program):
-        return indent + 'Program\n' + '\\n'.join(print_ast(f, indent + '  ') for f in node.functions)
+        return indent + 'Program\n' + '\n'.join(print_ast(f, indent + '  ') for f in node.functions)
     if isinstance(node, FunctionDecl):
-        return indent + f'Function {node.name}({node.params})\n' + '\\n'.join(print_ast(s, indent + '  ') for s in node.body)
+        return indent + f'Function {node.name}\n' + '\n'.join(print_ast(s, indent + '  ') for s in node.body)
+    if isinstance(node, IfStmt):
+        return indent + f'If ({node.condition})\n' + indent + '  Then:\n' + '\n'.join(print_ast(s, indent + '    ') for s in node.then_body)
+    if isinstance(node, WhileStmt):
+        return indent + f'While ({node.condition})\n' + '\n'.join(print_ast(s, indent + '  ') for s in node.body)
     if isinstance(node, VarDecl):
         return indent + f'VarDecl {node.name} = {node.value}'
     if isinstance(node, ReturnStmt):

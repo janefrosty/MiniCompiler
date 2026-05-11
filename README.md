@@ -2,6 +2,11 @@
 
 Упрощённый компилятор C-подобного языка → x86-64 ASM.
 
+**Спринт 1:** Лексический анализатор.  
+**Спринт 2:** Синтаксический анализ и построение AST.  
+**Спринт 3:** Семантический анализ и таблица символов.  
+**Спринт 4:** Промежуточное представление (IR) и генерация кода.  
+**Спринт 5:** Основа бэкенда x86-64 и прологи/эпилоги функций.
 
 ## Структура проекта
 
@@ -45,6 +50,18 @@ pip install -e .
 minicompiler semantic examples\hello.mc
 minicompiler ir      examples\hello.mc --output ir.txt
 ```
+
+**Спринт 5:** Основа бэкенда x86-64 и прологи/эпилоги функций.
+
+```powershell
+pip install -e .
+minicompiler asm examples\hello.mc --output main.asm
+minicompiler asm examples\if_test.mc --output if_test.asm
+
+Get-Content main.asm
+Get-Content if_test.asm
+```
+
 
 ## Тесты
 

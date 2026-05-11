@@ -1,5 +1,5 @@
 ﻿from lexer.lexer import Lexer, TokenType
-from mast.node import Program, FunctionDecl, VarDecl, ReturnStmt, BinaryExpr, LiteralExpr, IdentifierExpr
+from mast.node import Program, FunctionDecl, VarDecl, ReturnStmt, IfStmt, WhileStmt, BinaryExpr, LiteralExpr, IdentifierExpr
 from typing import List
 
 class Parser:
@@ -44,17 +44,68 @@ class Parser:
         return statements
 
     def _statement(self):
+        # Объявление переменной: int x = ...
         if self._match(TokenType.KW_INT):
             name = self._consume(TokenType.IDENTIFIER).lexeme
             self._consume(TokenType.ASSIGN)
             value = self._expression()
             self._consume(TokenType.SEMICOLON)
             return VarDecl(name, value)
+
+        # if
+        if self._match(TokenType.KW_IF):
+            return self._if_statement()
+
+        # while
+        if self._match(TokenType.KW_WHILE):
+            return self._while_statement()
+
+        # return
         if self._match(TokenType.KW_RETURN):
             value = self._expression()
             self._consume(TokenType.SEMICOLON)
             return ReturnStmt(value)
+
+        # Присваивание: x = ... (исправление)
+        if self._check(TokenType.IDENTIFIER):
+            saved_pos = self.current
+            name_token = self._advance()
+            if self._match(TokenType.ASSIGN):
+                value = self._expression()
+                self._consume(TokenType.SEMICOLON)
+                # Используем VarDecl для присваивания (временно, до введения AssignStmt)
+                return VarDecl(name_token.lexeme, value)
+            else:
+                # Откатываемся, если это не присваивание
+                self.current = saved_pos
+
+        # Выражение как statement
         return self._expression_stmt()
+
+    def _if_statement(self):
+        self._consume(TokenType.LPAREN)
+        condition = self._expression()
+        self._consume(TokenType.RPAREN)
+        self._consume(TokenType.LBRACE)
+        then_body = self._block()
+        self._consume(TokenType.RBRACE)
+        
+        else_body = None
+        if self._match(TokenType.KW_ELSE):
+            self._consume(TokenType.LBRACE)
+            else_body = self._block()
+            self._consume(TokenType.RBRACE)
+        
+        return IfStmt(condition, then_body, else_body)
+
+    def _while_statement(self):
+        self._consume(TokenType.LPAREN)
+        condition = self._expression()
+        self._consume(TokenType.RPAREN)
+        self._consume(TokenType.LBRACE)
+        body = self._block()
+        self._consume(TokenType.RBRACE)
+        return WhileStmt(condition, body)
 
     def _expression_stmt(self):
         expr = self._expression()
