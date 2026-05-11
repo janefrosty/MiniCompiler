@@ -7,6 +7,7 @@
 **Спринт 3:** Семантический анализ и таблица символов.  
 **Спринт 4:** Промежуточное представление (IR) и генерация кода.  
 **Спринт 5:** Основа бэкенда x86-64 и прологи/эпилоги функций.
+**Спринт 6:** Управление потоком и сложные выражения.
 
 ## Структура проекта
 
@@ -56,9 +57,17 @@ minicompiler ir      examples\hello.mc --output ir.txt
 ```powershell
 pip install -e .
 minicompiler asm examples\hello.mc --output main.asm
-minicompiler asm examples\if_test.mc --output if_test.asm
 
 Get-Content main.asm
+```
+
+**Спринт 6:** Управление потоком и сложные выражения.
+
+```powershell
+pip install -e .
+minicompiler asm examples\while_test.mc --output while_test.asm
+minicompiler asm examples\if_test.mc --output if_test.asm
+Get-Content while_test.asm
 Get-Content if_test.asm
 ```
 
