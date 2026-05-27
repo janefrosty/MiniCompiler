@@ -1,5 +1,5 @@
 ﻿from lexer.lexer import Lexer, TokenType
-from mast.node import Program, FunctionDecl, VarDecl, ReturnStmt, IfStmt, WhileStmt, BinaryExpr, LiteralExpr, IdentifierExpr
+from mast.node import Program, FunctionDecl, VarDecl, ReturnStmt, IfStmt, WhileStmt, BinaryExpr, LiteralExpr, IdentifierExpr, CallExpr
 from typing import List
 
 class Parser:
@@ -18,9 +18,7 @@ class Parser:
         self._consume(TokenType.KW_FN)
         name = self._consume(TokenType.IDENTIFIER).lexeme
         self._consume(TokenType.LPAREN)
-        params = []
-        if not self._check(TokenType.RPAREN):
-            params = self._param_list()
+        params = self._param_list() if not self._check(TokenType.RPAREN) else []
         self._consume(TokenType.RPAREN)
         self._consume(TokenType.LBRACE)
         body = self._block()
@@ -34,7 +32,8 @@ class Parser:
         return params
 
     def _param(self):
-        self._consume(TokenType.KW_INT)
+        if self._match(TokenType.KW_INT):
+            return self._consume(TokenType.IDENTIFIER).lexeme
         return self._consume(TokenType.IDENTIFIER).lexeme
 
     def _block(self):
@@ -44,7 +43,6 @@ class Parser:
         return statements
 
     def _statement(self):
-        # Объявление переменной: int x = ...
         if self._match(TokenType.KW_INT):
             name = self._consume(TokenType.IDENTIFIER).lexeme
             self._consume(TokenType.ASSIGN)
@@ -52,34 +50,17 @@ class Parser:
             self._consume(TokenType.SEMICOLON)
             return VarDecl(name, value)
 
-        # if
         if self._match(TokenType.KW_IF):
             return self._if_statement()
 
-        # while
         if self._match(TokenType.KW_WHILE):
             return self._while_statement()
 
-        # return
         if self._match(TokenType.KW_RETURN):
             value = self._expression()
             self._consume(TokenType.SEMICOLON)
             return ReturnStmt(value)
 
-        # Присваивание: x = ... (исправление)
-        if self._check(TokenType.IDENTIFIER):
-            saved_pos = self.current
-            name_token = self._advance()
-            if self._match(TokenType.ASSIGN):
-                value = self._expression()
-                self._consume(TokenType.SEMICOLON)
-                # Используем VarDecl для присваивания (временно, до введения AssignStmt)
-                return VarDecl(name_token.lexeme, value)
-            else:
-                # Откатываемся, если это не присваивание
-                self.current = saved_pos
-
-        # Выражение как statement
         return self._expression_stmt()
 
     def _if_statement(self):
@@ -89,13 +70,11 @@ class Parser:
         self._consume(TokenType.LBRACE)
         then_body = self._block()
         self._consume(TokenType.RBRACE)
-        
         else_body = None
         if self._match(TokenType.KW_ELSE):
             self._consume(TokenType.LBRACE)
             else_body = self._block()
             self._consume(TokenType.RBRACE)
-        
         return IfStmt(condition, then_body, else_body)
 
     def _while_statement(self):
@@ -158,6 +137,9 @@ class Parser:
         if self._match(TokenType.INT_LITERAL):
             return LiteralExpr(self._previous().literal)
         if self._match(TokenType.IDENTIFIER):
+            # Проверяем, является ли это вызовом функции
+            if self._check(TokenType.LPAREN):
+                return self._call_expr()
             return IdentifierExpr(self._previous().lexeme)
         if self._match(TokenType.KW_TRUE):
             return LiteralExpr(True)
@@ -168,6 +150,17 @@ class Parser:
             self._consume(TokenType.RPAREN)
             return expr
         raise Exception(f'Unexpected token: {self._peek().type.name}')
+
+    def _call_expr(self):
+        name = self._previous().lexeme
+        self._consume(TokenType.LPAREN)
+        args = []
+        if not self._check(TokenType.RPAREN):
+            args.append(self._expression())
+            while self._match(TokenType.COMMA):
+                args.append(self._expression())
+        self._consume(TokenType.RPAREN)
+        return CallExpr(name, args)
 
     def _consume(self, typ):
         if self._check(typ):

@@ -1,8 +1,7 @@
 ﻿from dataclasses import dataclass
 from typing import List, Optional, Union
 
-class IRInstruction:
-    pass
+class IRInstruction: pass
 
 @dataclass
 class Label(IRInstruction):
@@ -21,10 +20,15 @@ class Binary(IRInstruction):
     right: str
 
 @dataclass
+class Call(IRInstruction):
+    dest: Optional[str]
+    name: str
+    args: List[str]
+
+@dataclass
 class Return(IRInstruction):
     value: Optional[str] = None
 
-# Новое в Sprint 6
 @dataclass
 class Jump(IRInstruction):
     label: str
@@ -55,11 +59,13 @@ class IRProgram:
                     lines.append(f'  {instr.dest} = {instr.value}')
                 elif isinstance(instr, Binary):
                     lines.append(f'  {instr.dest} = {instr.left} {instr.op} {instr.right}')
+                elif isinstance(instr, Call):
+                    lines.append(f'  call {instr.name}({instr.args})')
+                elif isinstance(instr, Return):
+                    lines.append(f'  return {instr.value}')
                 elif isinstance(instr, Jump):
                     lines.append(f'  jmp {instr.label}')
                 elif isinstance(instr, JumpIfZero):
-                    lines.append(f'  jz {instr.condition} {instr.label}')
-                elif isinstance(instr, Return):
-                    lines.append(f'  return {instr.value if instr.value else ""}')
+                    lines.append(f'  jz {instr.condition} -> {instr.label}')
             lines.append('')
         return '\n'.join(lines)

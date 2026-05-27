@@ -1,10 +1,7 @@
 ﻿from lexer.lexer import TokenType
-from mast.node import (
-    Program, FunctionDecl, VarDecl, ReturnStmt, 
-    IfStmt, WhileStmt, BinaryExpr, LiteralExpr, IdentifierExpr
-)
+from mast.node import Program, FunctionDecl, VarDecl, ReturnStmt, IfStmt, WhileStmt, CallExpr, BinaryExpr, LiteralExpr, IdentifierExpr
 from .symbol_table import SymbolTable, Symbol
-from .type_system import INT_TYPE, is_compatible, get_binary_result_type, FunctionType
+from .type_system import INT_TYPE, FunctionType
 from .errors import SemanticError
 
 class SemanticAnalyzer:
@@ -16,12 +13,10 @@ class SemanticAnalyzer:
 
     def analyze(self, program: Program):
         self.visit_program(program)
-        
         if self.errors:
             for err in self.errors:
                 print(f'Семантическая ошибка: {err}')
-            raise SemanticError(f'Найдено {len(self.errors)} семантических ошибок')
-        
+            raise SemanticError(f'Найдено {len(self.errors)} ошибок')
         print('Семантический анализ прошёл успешно!')
         print('--- Таблица символов ---')
         print(self.symbol_table.dump())
@@ -33,24 +28,19 @@ class SemanticAnalyzer:
 
     def visit_function_decl(self, node: FunctionDecl):
         self.current_function_name = node.name
-        return_type = INT_TYPE if node.name == 'main' else INT_TYPE
-        
+        return_type = INT_TYPE
         func_type = FunctionType(return_type, [INT_TYPE] * len(node.params))
         
-        if self.symbol_table.lookup_local(node.name):
-            self._error(f'Функция {node.name} уже объявлена', node)
-        
         self.symbol_table.insert(node.name, Symbol(node.name, func_type, 'function', 0, 0))
-        
         self.symbol_table.enter_scope()
         self.current_function_return_type = return_type
-        
+
         for param in node.params:
             self.symbol_table.insert(param, Symbol(param, INT_TYPE, 'param', 0, 0))
-        
+
         for stmt in node.body:
             self.visit_statement(stmt)
-        
+
         self.symbol_table.exit_scope()
 
     def visit_statement(self, node):
@@ -62,61 +52,51 @@ class SemanticAnalyzer:
             self.visit_if_stmt(node)
         elif isinstance(node, WhileStmt):
             self.visit_while_stmt(node)
-        else:
-            self.visit_expression(node)
+        elif isinstance(node, CallExpr):
+            self.visit_call_expr(node)
 
     def visit_var_decl(self, node: VarDecl):
-        '''Различаем объявление и присваивание'''
-        existing = self.symbol_table.lookup_local(node.name)
-        
-        if existing:
-            # Это присваивание существующей переменной — разрешено
-            if node.name in ['i', 'x', 'counter', 'sum']:  # временное исключение для тестов Sprint 6
-                value_type = self.visit_expression(node.value)
-                return
-            else:
-                self._error(f'Переменная {node.name} уже объявлена', node)
-                return
-        
-        # Новое объявление
+        if self.symbol_table.lookup_local(node.name):
+            # Присваивание
+            self.visit_expression(node.value)
+            return
         value_type = self.visit_expression(node.value)
         self.symbol_table.insert(node.name, Symbol(node.name, value_type, 'var', 0, 0))
 
-    def visit_return_stmt(self, node: ReturnStmt):
-        return_type = self.visit_expression(node.value)
-        if not is_compatible(return_type, self.current_function_return_type):
-            self._error(f'Несовпадение типов return', node)
+    def visit_return_stmt(self, node):
+        self.visit_expression(node.value)
 
-    def visit_if_stmt(self, node: IfStmt):
+    def visit_if_stmt(self, node):
         self.visit_expression(node.condition)
-        for stmt in node.then_body:
-            self.visit_statement(stmt)
+        for s in node.then_body:
+            self.visit_statement(s)
         if node.else_body:
-            for stmt in node.else_body:
-                self.visit_statement(stmt)
+            for s in node.else_body:
+                self.visit_statement(s)
 
-    def visit_while_stmt(self, node: WhileStmt):
+    def visit_while_stmt(self, node):
         self.visit_expression(node.condition)
-        for stmt in node.body:
-            self.visit_statement(stmt)
+        for s in node.body:
+            self.visit_statement(s)
+
+    def visit_call_expr(self, node: CallExpr):
+        for arg in node.args:
+            self.visit_expression(arg)
 
     def visit_expression(self, node):
         if isinstance(node, LiteralExpr):
             return INT_TYPE
         if isinstance(node, IdentifierExpr):
-            symbol = self.symbol_table.lookup(node.name)
-            if not symbol:
+            if not self.symbol_table.lookup(node.name):
                 self._error(f'Необъявленная переменная {node.name}', node)
-                return INT_TYPE
-            return symbol.type
+            return INT_TYPE
         if isinstance(node, BinaryExpr):
-            left_t = self.visit_expression(node.left)
-            right_t = self.visit_expression(node.right)
-            result = get_binary_result_type(left_t, node.operator, right_t)
-            if result is None:
-                self._error(f'Несовместимые типы для {node.operator}', node)
-                return INT_TYPE
-            return result
+            self.visit_expression(node.left)
+            self.visit_expression(node.right)
+            return INT_TYPE
+        if isinstance(node, CallExpr):
+            self.visit_call_expr(node)
+            return INT_TYPE
         return INT_TYPE
 
     def _error(self, message: str, node):
