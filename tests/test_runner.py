@@ -134,8 +134,6 @@ def test_if_in_ir_generation():
     body_str = str(ir.functions[0].body)
     assert 'jz' in body_str or 'JumpIfZero' in body_str
 
-
-
 def test_full_control_flow_code_generation():
     source = 'fn main() { int x = 1; if (x > 0) { x = x + 5; } while (x < 20) { x = x + 1; } return x; }'
     p = Parser(source)

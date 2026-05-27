@@ -61,6 +61,16 @@ class Parser:
             self._consume(TokenType.SEMICOLON)
             return ReturnStmt(value)
 
+        # Присваивание
+        if self._check(TokenType.IDENTIFIER):
+            saved = self.current
+            name = self._consume(TokenType.IDENTIFIER).lexeme
+            if self._match(TokenType.ASSIGN):
+                value = self._expression()
+                self._consume(TokenType.SEMICOLON)
+                return VarDecl(name, value)
+            self.current = saved
+
         return self._expression_stmt()
 
     def _if_statement(self):
@@ -92,7 +102,20 @@ class Parser:
         return expr
 
     def _expression(self):
+        if self._check(TokenType.IDENTIFIER) and self._peek_next() == '(':
+            return self._call_expr()
         return self._equality()
+
+    def _call_expr(self):
+        name = self._consume(TokenType.IDENTIFIER).lexeme
+        self._consume(TokenType.LPAREN)
+        args = []
+        if not self._check(TokenType.RPAREN):
+            args.append(self._expression())
+            while self._match(TokenType.COMMA):
+                args.append(self._expression())
+        self._consume(TokenType.RPAREN)
+        return CallExpr(name, args)
 
     def _equality(self):
         expr = self._comparison()
@@ -137,9 +160,6 @@ class Parser:
         if self._match(TokenType.INT_LITERAL):
             return LiteralExpr(self._previous().literal)
         if self._match(TokenType.IDENTIFIER):
-            # Проверяем, является ли это вызовом функции
-            if self._check(TokenType.LPAREN):
-                return self._call_expr()
             return IdentifierExpr(self._previous().lexeme)
         if self._match(TokenType.KW_TRUE):
             return LiteralExpr(True)
@@ -150,17 +170,6 @@ class Parser:
             self._consume(TokenType.RPAREN)
             return expr
         raise Exception(f'Unexpected token: {self._peek().type.name}')
-
-    def _call_expr(self):
-        name = self._previous().lexeme
-        self._consume(TokenType.LPAREN)
-        args = []
-        if not self._check(TokenType.RPAREN):
-            args.append(self._expression())
-            while self._match(TokenType.COMMA):
-                args.append(self._expression())
-        self._consume(TokenType.RPAREN)
-        return CallExpr(name, args)
 
     def _consume(self, typ):
         if self._check(typ):
@@ -190,3 +199,8 @@ class Parser:
 
     def _is_at_end(self):
         return self._peek().type == TokenType.EOF
+
+    def _peek_next(self):
+        if self.current + 1 < len(self.tokens):
+            return self.tokens[self.current + 1].lexeme
+        return ''
