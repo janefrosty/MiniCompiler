@@ -102,6 +102,11 @@ class SemanticAnalyzer:
             self.visit_statement(s)
 
     def visit_call_expr(self, node: CallExpr):
+        # Проверяем, объявлена ли функция
+        func_sym = self.symbol_table.lookup(node.name)
+        if not func_sym:
+            self._error(f'Необъявленная функция {node.name}', node)
+            return
         for arg in node.args:
             self.visit_expression(arg)
 
