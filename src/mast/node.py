@@ -20,6 +20,12 @@ class VarDecl(Node):
     value: 'Expression'
 
 @dataclass
+class ArrayDecl(Node):
+    name: str
+    dimensions: List['Expression'] 
+    initializer: Optional[List['Expression']] = None  
+
+@dataclass
 class ReturnStmt(Node):
     value: 'Expression'
 
@@ -34,7 +40,6 @@ class WhileStmt(Node):
     condition: 'Expression'
     body: List['Statement']
 
-# Новое для Sprint 7
 @dataclass
 class CallExpr(Node):
     name: str
@@ -57,6 +62,11 @@ class LiteralExpr(Expression):
 class IdentifierExpr(Expression):
     name: str
 
+@dataclass
+class ArraySubscript(Expression):
+    array: Expression
+    indices: List['Expression']
+
 def print_ast(node: Node, indent: str = '') -> str:
     if isinstance(node, Program):
         return indent + 'Program\n' + '\n'.join(print_ast(f, indent + '  ') for f in node.functions)
@@ -64,10 +74,16 @@ def print_ast(node: Node, indent: str = '') -> str:
         return indent + f'Function {node.name}\n' + '\n'.join(print_ast(s, indent + '  ') for s in node.body)
     if isinstance(node, VarDecl):
         return indent + f'VarDecl {node.name} = {node.value}'
+    if isinstance(node, ArrayDecl):
+        dims_str = ', '.join(str(d) for d in node.dimensions)
+        return indent + f'ArrayDecl {node.name}[{dims_str}]'
     if isinstance(node, CallExpr):
         return indent + f'Call {node.name}({node.args})'
     if isinstance(node, IfStmt):
         return indent + f'If ({node.condition})'
     if isinstance(node, WhileStmt):
         return indent + f'While ({node.condition})'
+    if isinstance(node, ArraySubscript):
+        indices_str = ', '.join(str(i) for i in node.indices)
+        return indent + f'ArraySubscript {node.array}[{indices_str}]'
     return indent + str(type(node))

@@ -39,6 +39,27 @@ class JumpIfZero(IRInstruction):
     label: str
 
 @dataclass
+class Malloc(IRInstruction):
+    dest: str 
+    size: str 
+
+@dataclass
+class Store(IRInstruction):
+    address: str  
+    value: str  
+
+@dataclass
+class Load(IRInstruction):
+    dest: str
+    address: str
+
+@dataclass
+class GetElementPtr(IRInstruction):
+    dest: str
+    base: str 
+    index: str  
+
+@dataclass
 class IRFunction:
     name: str
     params: List[str]
@@ -67,5 +88,13 @@ class IRProgram:
                     lines.append(f'  jmp {instr.label}')
                 elif isinstance(instr, JumpIfZero):
                     lines.append(f'  jz {instr.condition} -> {instr.label}')
+                elif isinstance(instr, Malloc):
+                    lines.append(f'  {instr.dest} = malloc({instr.size})')
+                elif isinstance(instr, Store):
+                    lines.append(f'  store {instr.value} -> [{instr.address}]')
+                elif isinstance(instr, Load):
+                    lines.append(f'  {instr.dest} = load [{instr.address}]')
+                elif isinstance(instr, GetElementPtr):
+                    lines.append(f'  {instr.dest} = gep {instr.base}[{instr.index}]')
             lines.append('')
         return '\n'.join(lines)

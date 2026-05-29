@@ -78,6 +78,8 @@ Get-Content if_test.asm
 pip install -e .
 minicompiler asm examples\factorial.mc --output factorial.asm
 Get-Content factorial.asm
+minicompiler asm examples\array_test.mc --output array_test.asm
+Get-Content array_test.asm
 ```
 
 ## Тесты

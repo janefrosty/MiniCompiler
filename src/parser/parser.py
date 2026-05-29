@@ -1,5 +1,9 @@
 ﻿from lexer.lexer import Lexer, TokenType
-from mast.node import Program, FunctionDecl, VarDecl, ReturnStmt, IfStmt, WhileStmt, BinaryExpr, LiteralExpr, IdentifierExpr, CallExpr
+from mast.node import (
+    Program, FunctionDecl, VarDecl, ReturnStmt, IfStmt, WhileStmt,
+    BinaryExpr, LiteralExpr, IdentifierExpr, CallExpr,
+    ArrayDecl, ArraySubscript  
+)
 from typing import List
 
 class Parser:
@@ -45,6 +49,8 @@ class Parser:
     def _statement(self):
         if self._match(TokenType.KW_INT):
             name = self._consume(TokenType.IDENTIFIER).lexeme
+            if self._check(TokenType.LBRACKET):
+                return self._array_decl(name)
             self._consume(TokenType.ASSIGN)
             value = self._expression()
             self._consume(TokenType.SEMICOLON)
@@ -52,26 +58,32 @@ class Parser:
 
         if self._match(TokenType.KW_IF):
             return self._if_statement()
-
         if self._match(TokenType.KW_WHILE):
             return self._while_statement()
-
         if self._match(TokenType.KW_RETURN):
             value = self._expression()
             self._consume(TokenType.SEMICOLON)
             return ReturnStmt(value)
 
-        # Присваивание
         if self._check(TokenType.IDENTIFIER):
             saved = self.current
-            name = self._consume(TokenType.IDENTIFIER).lexeme
+            left = self._primary() 
             if self._match(TokenType.ASSIGN):
-                value = self._expression()
+                right = self._expression()
                 self._consume(TokenType.SEMICOLON)
-                return VarDecl(name, value)
+                return BinaryExpr(left, '=', right)
             self.current = saved
 
         return self._expression_stmt()
+
+    def _array_decl(self, name: str):
+        dimensions = []
+        while self._match(TokenType.LBRACKET):
+            dim_expr = self._expression()
+            dimensions.append(dim_expr)
+            self._consume(TokenType.RBRACKET)
+        self._consume(TokenType.SEMICOLON)
+        return ArrayDecl(name, dimensions, None)
 
     def _if_statement(self):
         self._consume(TokenType.LPAREN)
@@ -102,20 +114,16 @@ class Parser:
         return expr
 
     def _expression(self):
-        # if self._check(TokenType.IDENTIFIER) and self._peek_next() == TokenType.LPAREN:
-        #     name = self._consume(TokenType.IDENTIFIER).lexeme
-        #     return self._call_expr(name)
-        return self._equality()
+        return self._assignment()
 
-    def _call_expr(self, name):
-        self._consume(TokenType.LPAREN)
-        args = []
-        if not self._check(TokenType.RPAREN):
-            args.append(self._expression())
-            while self._match(TokenType.COMMA):
-                args.append(self._expression())
-        self._consume(TokenType.RPAREN)
-        return CallExpr(name, args)
+    def _assignment(self):
+        left = self._equality()
+        if self._match(TokenType.ASSIGN):
+            right = self._assignment()
+            if not isinstance(left, (IdentifierExpr, ArraySubscript)):
+                raise Exception("Left-hand side of assignment must be a variable or array element")
+            return BinaryExpr(left, '=', right)
+        return left
 
     def _equality(self):
         expr = self._comparison()
@@ -159,20 +167,42 @@ class Parser:
     def _primary(self):
         if self._match(TokenType.INT_LITERAL):
             return LiteralExpr(self._previous().literal)
+
         if self._match(TokenType.IDENTIFIER):
             name = self._previous().lexeme
-            if self._check(TokenType.LPAREN): 
+            # Вызов функции
+            if self._check(TokenType.LPAREN):
                 return self._call_expr(name)
-            return IdentifierExpr(name)
+            # Доступ к элементу массива
+            expr = IdentifierExpr(name)
+            while self._match(TokenType.LBRACKET):
+                index = self._expression()
+                self._consume(TokenType.RBRACKET)
+                expr = ArraySubscript(expr, [index])
+            return expr
+
         if self._match(TokenType.KW_TRUE):
             return LiteralExpr(True)
         if self._match(TokenType.KW_FALSE):
             return LiteralExpr(False)
+
+        # Скобочное выражение
         if self._match(TokenType.LPAREN):
             expr = self._expression()
             self._consume(TokenType.RPAREN)
             return expr
+
         raise Exception(f'Unexpected token: {self._peek().type.name}')
+
+    def _call_expr(self, name: str):
+        self._consume(TokenType.LPAREN)
+        args = []
+        if not self._check(TokenType.RPAREN):
+            args.append(self._expression())
+            while self._match(TokenType.COMMA):
+                args.append(self._expression())
+        self._consume(TokenType.RPAREN)
+        return CallExpr(name, args)
 
     def _consume(self, typ):
         if self._check(typ):
@@ -203,8 +233,3 @@ class Parser:
 
     def _is_at_end(self):
         return self._peek().type == TokenType.EOF
-
-    # def _peek_next(self):
-    #     if self.current + 1 >= len(self.tokens):
-    #         return TokenType.EOF
-    #     return self.tokens[self.current + 1].type

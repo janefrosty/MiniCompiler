@@ -1,10 +1,9 @@
 ﻿from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict, Optional, List, Union
 
 @dataclass(frozen=True)
 class Type:
     name: str
-
     def __str__(self):
         return self.name
 
@@ -24,6 +23,17 @@ class StructType(Type):
     def __init__(self, name: str, fields: Dict[str, Type]):
         super().__init__(name)
         self.fields = fields
+
+class ArrayType(Type):
+    def __init__(self, elem_type: Type, dimensions: List[Union[int, 'Expression']]):
+        dims_str = ']['.join(str(d) for d in dimensions)
+        super().__init__(f'{elem_type}[{dims_str}]')
+        self.elem_type = elem_type
+        self.dimensions = dimensions 
+
+    def __str__(self):
+        dims_str = ']['.join(str(d) for d in self.dimensions)
+        return f'{self.elem_type}[{dims_str}]'
 
 def is_compatible(actual: Type, expected: Type) -> bool:
     if actual == expected:

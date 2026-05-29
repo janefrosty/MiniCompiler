@@ -1,24 +1,33 @@
 section .text
     global main
+    extern malloc
     extern printf
+    extern free
 
 factorial:
     push rbp
     mov rbp, rsp
     sub rsp, 128
+    mov eax, dword [rbp-16]
     mov dword [rbp-8], eax
-    mov dword [rbp-8], 1
-    mov eax, t2
-    add eax, t3
-    mov [rbp-16], eax
-    mov eax, 0
+    mov dword [rbp-24], 1
+    mov eax, dword [rbp-8]
+    mov dword [rbp-32], eax
+    cmp dword [rbp-32], 0
+    je L1
+    mov eax, dword [rbp-40]
     jmp .return_label
-    mov dword [rbp-8], eax
-    mov eax, t5
-    add eax, t6
-    mov [rbp-16], eax
-    mov eax, 0
+    jmp L2
+L1:
+L2:
+    mov eax, dword [rbp-16]
+    mov dword [rbp-48], eax
+    mov eax, dword [rbp-48]
+    imul eax, dword [rbp-64]
+    mov dword [rbp-56], eax
+    mov eax, dword [rbp-56]
     jmp .return_label
+.return_label:
     mov rsp, rbp
     pop rbp
     ret
@@ -27,10 +36,13 @@ main:
     push rbp
     mov rbp, rsp
     sub rsp, 128
+    mov eax, dword [rbp-16]
     mov dword [rbp-8], eax
-    mov dword [rbp-8], eax
-    mov eax, 0
+    mov eax, dword [rbp-8]
+    mov dword [rbp-24], eax
+    mov eax, dword [rbp-24]
     jmp .return_label
+.return_label:
     mov rsp, rbp
     pop rbp
     ret
