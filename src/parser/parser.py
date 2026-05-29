@@ -102,12 +102,12 @@ class Parser:
         return expr
 
     def _expression(self):
-        if self._check(TokenType.IDENTIFIER) and self._peek_next() == '(':
-            return self._call_expr()
+        # if self._check(TokenType.IDENTIFIER) and self._peek_next() == TokenType.LPAREN:
+        #     name = self._consume(TokenType.IDENTIFIER).lexeme
+        #     return self._call_expr(name)
         return self._equality()
 
-    def _call_expr(self):
-        name = self._consume(TokenType.IDENTIFIER).lexeme
+    def _call_expr(self, name):
         self._consume(TokenType.LPAREN)
         args = []
         if not self._check(TokenType.RPAREN):
@@ -160,7 +160,10 @@ class Parser:
         if self._match(TokenType.INT_LITERAL):
             return LiteralExpr(self._previous().literal)
         if self._match(TokenType.IDENTIFIER):
-            return IdentifierExpr(self._previous().lexeme)
+            name = self._previous().lexeme
+            if self._check(TokenType.LPAREN): 
+                return self._call_expr(name)
+            return IdentifierExpr(name)
         if self._match(TokenType.KW_TRUE):
             return LiteralExpr(True)
         if self._match(TokenType.KW_FALSE):
@@ -184,8 +187,9 @@ class Parser:
         return False
 
     def _check(self, typ):
-        if self._is_at_end(): return False
-        return self._peek().type == typ
+        if self.current >= len(self.tokens):
+            return False
+        return self.tokens[self.current].type == typ
 
     def _advance(self):
         self.current += 1
@@ -200,7 +204,7 @@ class Parser:
     def _is_at_end(self):
         return self._peek().type == TokenType.EOF
 
-    def _peek_next(self):
-        if self.current + 1 < len(self.tokens):
-            return self.tokens[self.current + 1].lexeme
-        return ''
+    # def _peek_next(self):
+    #     if self.current + 1 >= len(self.tokens):
+    #         return TokenType.EOF
+    #     return self.tokens[self.current + 1].type
