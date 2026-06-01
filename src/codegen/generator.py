@@ -31,6 +31,9 @@ class CodeGenerator:
         return f'.L{self.label_counter}'
 
     def _generate_function(self, func: IRFunction):
+        # Уникальная метка возврата для этой функции
+        return_label = f'{func.name}.return_label'
+        
         self.emitter.emit(f'{func.name}:')
         self.emitter.emit('    push rbp')
         self.emitter.emit('    mov rbp, rsp')
@@ -119,7 +122,7 @@ class CodeGenerator:
                     self.emitter.emit(f'    mov eax, dword [rbp-{off}]')
                 else:
                     self.emitter.emit(f'    mov eax, 0')
-                self.emitter.emit('    jmp .return_label')
+                self.emitter.emit(f'    jmp {return_label}')
 
             elif isinstance(instr, Label):
                 self.emitter.emit(f'{instr.name}:')
@@ -132,7 +135,8 @@ class CodeGenerator:
                 self.emitter.emit(f'    cmp dword [rbp-{cond_off}], 0')
                 self.emitter.emit(f'    je {instr.label}')
 
-        self.emitter.emit('.return_label:')
+        # Эпилог с уникальной меткой возврата
+        self.emitter.emit(f'{return_label}:')
         self.emitter.emit('    mov rsp, rbp')
         self.emitter.emit('    pop rbp')
         self.emitter.emit('    ret')

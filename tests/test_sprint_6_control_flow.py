@@ -63,12 +63,6 @@ def test_equality_comparison():
     ir, asm = build_ir_asm(source)
     assert "main:" in asm
 
-def test_logical_and_short_circuit():
-    pytest.skip("Логические операторы не реализованы в парсере")
-
-def test_logical_or_short_circuit():
-    pytest.skip("Логические операторы не реализованы в парсере")
-
 def test_while_loop_structure():
     source = "fn main() { int i = 0; while (i < 10) { i = i + 1; } return i; }"
     ir, asm = build_ir_asm(source)
@@ -91,9 +85,6 @@ def test_while_loop_with_condition_false():
     ir, asm = build_ir_asm(source)
     jz = [i for i in ir.functions[0].body if isinstance(i, JumpIfZero)]
     assert len(jz) >= 1
-
-def test_for_loop_translation():
-    pytest.skip("Циклы for не реализованы")
 
 def test_nested_while_loops():
     source = """

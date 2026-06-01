@@ -76,8 +76,6 @@ Get-Content if_test.asm
 
 ```powershell
 pip install -e .
-minicompiler asm examples\factorial.mc --output factorial.asm
-Get-Content factorial.asm
 minicompiler asm examples\array_test.mc --output array_test.asm
 Get-Content array_test.asm
 ```
@@ -85,5 +83,51 @@ Get-Content array_test.asm
 ## Тесты
 
 ```powershell
-pytest tests\ -v
+cd tests
+python run_all_tests.py
+
+#или
+cd tests
+pytest test_sprint_1_lexer.py -v
+#...
+```
+
+
+## использование
+
+```powershell
+# Установка nasm (ассемблер)
+sudo apt update && sudo apt install nasm
+
+# Установка binutils (для ld, если ещё нет)
+sudo apt install binutils
+
+cd MiniCompiler
+# Установка pytest (опционально, для тестов)
+pip3 install pytest
+pip install -e .
+
+minicompiler examples/array_test.mc -o array_test
+
+./array_test
+
+echo $?
+
+
+# сборка исполняемого файла из примера с массивами
+minicompiler examples/array_test.mc -o array_test.exe
+.\array_test.exe
+echo $LASTEXITCODE   # 30
+
+# сборка только ассемблера
+minicompiler -S examples/array_test.mc -o array_test.s
+
+# просмотр токенов
+minicompiler --tokens examples/array_test.mc
+
+# просмотр AST
+minicompiler --ast examples/array_test.mc
+
+# просмотр IR
+minicompiler --ir examples/array_test.mc
 ```

@@ -41,9 +41,6 @@ def test_parses_var_declaration():
     assert isinstance(stmt.value, LiteralExpr)
     assert stmt.value.value == 42
 
-def test_parses_var_declaration_without_initializer():
-    # Ваш парсер требует инициализатор, поэтому тест пропускается
-    pytest.skip("Ваш парсер требует инициализатор (int x = ...)")
 
 def test_parses_return_statement_with_literal():
     source = "fn main() { return 42; }"
@@ -115,10 +112,6 @@ def test_parses_comparison_operators():
     p = Parser(source)
     ast = p.parse()
     assert len(ast.functions[0].body) >= 2
-
-def test_parses_logical_operators():
-    # Ваш парсер не поддерживает && и || на уровне выражений (они разбираются как отдельные токены, но не строят AST)
-    pytest.skip("Логические операторы не реализованы в парсере")
 
 def test_reports_missing_semicolon():
     source = "fn main() { int x = 5 return x; }"
